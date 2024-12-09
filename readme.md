@@ -3,6 +3,7 @@ The Claremont Colleges has web apps such as hyperschedule and 5C scheduler to bu
 
 # Features
 **Feature 1: Personalized Course Recommendations**
+
 Students can input the courses they've taken, specify their major, and indicate the subjects they wish to study next semester. The chatbot suggests courses that satisfy their major requirements and explore additional interests.
 Example 1: 
 User Query: 
@@ -27,6 +28,7 @@ These courses were selected based on their relevance to your major and the requi
 ```
 
 **Feature 2: Career-Aligned Course Recommendations**
+
 Student can input the raw job description they want to apply to and ask the chatbot courses they can take to situate themselves better among other candidates
 
 User Query:
