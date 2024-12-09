@@ -57,11 +57,6 @@ def chain_of_thought(user_query, schema, chat_history):
       courses and rank CMC courses higher. Student just wants two technical courses and two fun classes so select two
       computer science/math classes and two history/religious studies courses. Also have a look at schema to make sure all bases are covered
 
-      Question: give me the names of 10 courses given I am a CMC student
-      Response: student prefers a diversity of courses. There are 8 course categories so select 1-2 courses from each course category. Student
-      is from CMC so rank the courses and give highest preference to CMC courses. Also need to make sure there are no repeated course names/course codes in final results
-      because we want to give user a distinct set of courses they can take. Also have a look at schema to make sure all bases are covered
-
       Question: I am applying to the Lowe Institute. Here is the job description:
       Data Journalists (DJs) will work in a team with Professor Cameron Shelton, Lowe Institute Director, and Dr. Minjae Yun, Lowe Assistant Director, to develop content for the Institute’s Lowe Down blog and social media accounts. 
       Content will be defined based on the DJs research interests as well as the Lowe Institute’s focus on economics, politics, healthcare, education, transportation, and environmental studies pertinent to the Inland Empire and California.
@@ -89,11 +84,15 @@ def chain_of_thought(user_query, schema, chat_history):
       Question: I have taken the following courses: Principles of Economic Analysis, Intermediate Microeconomics, Economics Statistics, Computing for the Web,
       Literature GE, History GE and Psychology GE. I am an Economics major so I want to take two Economics courses next semester, one philosophy GE and one
       government GE. Can you recommend me a course scheule? I also prefer afternoon classes
-      Response: First identify that the courses are course names not course code. User wants to take two Economics courses next semester. Filter economics courses by 
-      looking at prerequisites and choosing two economics courses that have prerequisites that student has already met or no prerequisites at all. Make sure that courses suggested are not courses that user has already taken. Also give first preference
-      to courses that satisfy Economics major requirements from schema
+      Response: First identify that the courses are course names not course code. User wants to take two Economics courses next semester. 
+      Give first preference to courses that satisfy Economics major requirements from schema. Economics requirements are ECON050, ECON101, ECON102, ECON125, course codes in economics greater than 125.
+      SQL query should give preference to these course codes.
       To identify courses that are taken, take keywords from courses that user has mentioned and make sure that final list of course names do not have these keywords. In this scenario keywords would be "Principles of Economic", 
-      "Microeconomics", "Statistics". The schema provides the criteria in order to qualify the philosophy course for philosophy GE or government course for government GE. According to schema, any philosophy course with course code below 
+      "Microeconomics", "Statistics". Sort the courses in some random order not strictly increasing or decreasing
+      Make sure that courses suggested are not courses that user has already taken.
+      To make sure that recommended courses are not ones that user has already taken filter out course names that are similar to the ones that user has described.
+      In this scenario identify keywords in the courses user has indicated i.e. "Principles of Economic", "Microeconomics", "Statistics". And filter course names from final results that have these keywords in them. 
+      The schema provides the criteria in order to qualify the philosophy course for philosophy GE or government course for government GE. According to schema, any philosophy course with course code below 
       59 satisifies philosophy GE. Also Introduction American Politics course satisfies government GE. User might want multiple timetables that they can choose from so provide at least 4 different sets of 2 economics courses, 1 philosophy GE and 1 government GE.
       Student also prefers afternoon classes so give higher preference to time in the afternoon. Also have a look at schema to make sure all bases are covered
 
@@ -132,48 +131,6 @@ def get_sql_chain(user_query, schema, chat_history):
     Write only the SQL query and nothing else. Do not wrap the SQL query in any other text, not even backticks. For column names, strictly adhere to schema.
     
     For example:
-    Question: give me the names of 10 courses given I am a CMC student
-    strategy: student prefers a diversity of courses. There are 8 course categories so select 1-2 courses from each course category. Student
-    is from CMC so rank the courses and give highest preference to CMC courses. Also need to make sure there are no repeated course names/course codes in final results
-    because we want to give user a distinct set of courses they can take. Also have a look at schema to make sure all bases are covered
-    SQL Query: 
-    WITH RankedCourses AS (
-    SELECT 
-        `Course Name`, 
-        `Course Code Short`, 
-        campus,
-        course,
-        ROW_NUMBER() OVER (
-            PARTITION BY course 
-            ORDER BY 
-                CASE campus
-                    WHEN 'CM Campus' THEN 1  
-                    WHEN 'PZ Campus' THEN 2
-                    WHEN 'SC Campus' THEN 3
-                    WHEN 'PO Campus' THEN 4
-                    WHEN 'HM Campus' THEN 5
-                END, 
-                `Course Code Short`  
-        ) AS rank_in_category
-    FROM merged_courses
-)
-SELECT 
-    DISTINCT `Course Name`,
-    `Course Code Short`,
-    campus,
-    course
-FROM RankedCourses
-WHERE rank_in_category <= 2  
-ORDER BY 
-    course,  
-    CASE campus
-        WHEN 'CM Campus' THEN 1
-        WHEN 'PZ Campus' THEN 2
-        WHEN 'SC Campus' THEN 3
-        WHEN 'PO Campus' THEN 4
-        WHEN 'HM Campus' THEN 5
-    END
-LIMIT 16;
 
     Question: I am a CMC student. I want to take two technical courses and two fun classes next semester
     Strategy: Need to identify what courses can be categorized as technical courses and what courses can be categorized
@@ -255,11 +212,14 @@ LIMIT 4;
     Question: I have taken the following courses: Principles of Economic Analysis, Intermediate Microeconomics, Economics Statistics, Computing for the Web,
     Literature GE, History GE and Psychology GE. I am an Economics major so I want to take two Economics courses next semester, one philosophy GE and one
     government GE. Can you recommend me a course scheule? I also prefer afternoon classes
-    Strategy: First identify that the courses are course names not course code. User wants to take two Economics courses next semester. Filter economics courses by 
-    looking at prerequisites and choosing two economics courses that have prerequisites that student has already met or no prerequisites at all. Make sure that courses suggested are not courses that user has already taken.
-    Also give first preference to courses that satisfy Economics major requirements from schema
+    Strategy: First identify that the courses are course names not course code. User wants to take two Economics courses next semester. 
+    Give first preference to courses that satisfy Economics major requirements from schema. Economics requirements in schema are ECON050, ECON101, ECON102, ECON125, course codes in economics greater than 125.
+    SQL query should give preference to these course codes.
     To identify courses that are taken, take keywords from courses that user has mentioned and make sure that final list of course names do not have these keywords. In this scenario keywords would be "Principles of Economic", 
     "Microeconomics", "Statistics". Sort the courses in some random order not strictly increasing or decreasing
+    Make sure that courses suggested are not courses that user has already taken.
+    To make sure that recommended courses are not ones that user has already taken filter out course names that are similar to the ones that user has described.
+    In this scenario identify keywords in the courses user has indicated i.e. "Principles of Economic", "Microeconomics", "Statistics". And filter course names from final results that have these keywords in them. 
     The schema provides the criteria in order to qualify the philosophy course for philosophy GE or government course for government GE. According to schema, any philosophy course with course code below 
     59 satisifies philosophy GE. Also Introduction American Politics course satisfies government GE. User might want multiple timetables that they can choose from so provide at least 4 different sets of 2 economics courses, 1 philosophy GE and 1 government GE.
     Student also prefers afternoon classes so give higher preference to time in the afternoon. Also have a look at schema to make sure all bases are covered
@@ -553,7 +513,8 @@ def get_schema(_):
       'Data Science sequence requirements: CSCI004 or CSCI005 or CSCI040, CSCI036 or ECON122 or ECON160 or PSYC166, ECON120 or GOVT055 or MATH052 or MATH152 or PSYC109, CSCI046 or ECON125 or MATH151 or PSYC111, CSCI143 or CSCI145 or ECON126 or MATH152 or MATH156 or MATH160 or MATH166 or MATH186 or MATH187 or PSYC167, DS180',
       'Math major requirements: MATH032, MATH060, MATH131, MATH151', 
       'Computer Science major requirements: CSCI060, MATH055, CSCI070, CSCI081, CSCI105, CSCI123, CSCI140, CSCI183, CSCI184, CSCI195',
-      'When courses within major requirements are separated by an or, it means if one of the courses is taken taking another course within the or statement is not allowed',
+      'if user mentions courses they have already taken, do not recommend those same courses in final result',
+      'if user includes their major and indicates that they want to take courses to satisy their major, provide course names that meet their major requirements first before suggesting additional courses',
   }
 
   # print('schema:', schema)
@@ -579,7 +540,8 @@ def get_response(user_query: str, db: SQLDatabase, chat_history: list):
   
   template = """
     You are a data analyst at a company. You are interacting with a user who is asking you questions about the company's database.
-    Based on the table schema below, question, sql query, and sql response, write a natural language response.
+    Based on the table schema below, question, sql query, and sql response, write a natural language response. Make sure that response 
+    follows the schema
     <SCHEMA>{schema}</SCHEMA>
 
     Conversation History: {chat_history}
