@@ -491,7 +491,7 @@ def get_schema(_):
   schema['rules'] = {
       'give higher preference to the courses from the school/campus that user says they stay at',
       'easy/fun courses have fewer prerequisites compared to harder or more technical courses',
-      'make sure course names recommended are different. A course should not be recommended more than once in the same response',
+      'make sure course names recommended are different. A course should not be recommended more than once in the same response. Always use distinct in final return statement for recommended courses',
       'Math or CS GE can be satisified by any computer science or math course in any of the campuses',
       'literature GE can be satified by any literature courses offered at CMC',
       'philosophy GE can be satisifed by any philosophy course with course code less than 59',
@@ -504,14 +504,14 @@ def get_schema(_):
       'provde user with aternative timetables not just one strict response. For example if user asks for two econ courses and 2 psychology courses, provide 4 timetables each with 2 different economics and 2 different psychology courses',
       'filter out course names that are seminar or research methods or special topics',
       'always return 5 more results than user requested in SQL query',
-      'Economics major requirements: ECON050, ECON101, ECON102, ECON125, course codes in economics greater than 125',
+      'Economics major requirements: ECON050, ECON101, ECON102, ECON125, course codes in economics greater than 125. If student has taken ECON101, they cannot take ECON050. If student has taken ECON125, they cannot take ECON120.',
       'Government major requirements: GOVT020, GOVT080, GOVT060 or GOVT070, 2 of (GOVT050 or GOVT055, GOVT112A or GOVT112B), course codes in government greater than 100',
       'History major requirements: course name focus on United States, course name focus on Europe, course name focus on Asia, Latin America, Africa, Middle East',
-      'Psychology major requirements: PSYC030, PSYC037 or PSYC092, PSYC065 or PSYC070 or PSYC081, PSYC040 or PSYC096 or PSYC097, PSYC109, PSYC110 and PSYC111, course codes greater than 100 in psychology',
+      'Psychology major requirements: PSYC030, PSYC037 or PSYC092, PSYC065 or PSYC070 or PSYC081, PSYC040 or PSYC096 or PSYC097, PSYC109, PSYC110 and PSYC111, course codes greater than 100 in psychology. If student has taken one of the courses in the or statement, they cannot take any other courses in the or statement',
       'Philosophy major requirements: 1 course code less than 059, PHIL095, some history of philosophy course, some ethics course, PHIL198',
-      'Data Science major requirements: CSCI004 or CSCI005 or CSCI040, MATH031, CSCI055 or MATH055, CSCI046, MATH060, CSCI036 or ECON122 or ECON160 or PSYC166, MATH151, MATH152, CSCI145, CSCI143, some ethics course',
-      'Data Science sequence requirements: CSCI004 or CSCI005 or CSCI040, CSCI036 or ECON122 or ECON160 or PSYC166, ECON120 or GOVT055 or MATH052 or MATH152 or PSYC109, CSCI046 or ECON125 or MATH151 or PSYC111, CSCI143 or CSCI145 or ECON126 or MATH152 or MATH156 or MATH160 or MATH166 or MATH186 or MATH187 or PSYC167, DS180',
-      'Math major requirements: MATH032, MATH060, MATH131, MATH151', 
+      'Data Science major requirements: CSCI004 or CSCI005 or CSCI040, MATH031, CSCI055 or MATH055, CSCI046, MATH060, CSCI036 or ECON122 or ECON160 or PSYC166, MATH151, MATH152, CSCI145, CSCI143, some ethics course. If student has taken one of the courses in the or statement, they cannot take any other courses in the or statement',
+      'Data Science sequence requirements: CSCI004 or CSCI005 or CSCI040, CSCI036 or ECON122 or ECON160 or PSYC166, ECON120 or GOVT055 or MATH052 or MATH152 or PSYC109, CSCI046 or ECON125 or MATH151 or PSYC111, CSCI143 or CSCI145 or ECON126 or MATH152 or MATH156 or MATH160 or MATH166 or MATH186 or MATH187 or PSYC167, DS180. If student has taken one of the courses in the or statement, they cannot take any other courses in the or statement',
+      'Math major requirements: MATH030, MATH031, MATH032, MATH060, MATH131, MATH151. If user has taken MATH031, they cannot take MATH030 and if user has taken MATH032, user cannot take MATH031 and MATH030', 
       'Computer Science major requirements: CSCI060, MATH055, CSCI070, CSCI081, CSCI105, CSCI123, CSCI140, CSCI183, CSCI184, CSCI195',
       'if user mentions courses they have already taken, do not recommend those same courses in final result',
       'if user includes their major and indicates that they want to take courses to satisy their major, provide course names that meet their major requirements first before suggesting additional courses',
@@ -573,31 +573,16 @@ def get_response(user_query: str, db: SQLDatabase, chat_history: list):
   
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
-      AIMessage(content="Hello! I'm a SQL assistant. Ask me anything about your database."),
+      AIMessage(content="Hello! I'm Claremont Colleges Course Recommender."),
     ]
 
 if "db" not in st.session_state:
     st.session_state.db = None
 load_dotenv()
 
-st.set_page_config(page_title="Chat with MySQL", page_icon=":speech_balloon:")
+st.set_page_config(page_title="Chat with Claremont Colleges Course Recommender", page_icon=":speech_balloon:")
 
-st.title("Chat with SQLite")
-
-with st.sidebar:
-    st.subheader("Settings")
-    st.write("This is a simple chat application using SQLite. Connect to the database and start chatting.")
-    
-    st.text_input("Database File", value="courses_database.db", key="DatabaseFile")  # SQLite file path
-    if st.button("Connect"):
-      with st.spinner("Connecting to database..."):
-        db_file = st.session_state["DatabaseFile"]
-        db = init_database(db_file)  # Pass the correct db_file
-        if db:
-            st.session_state.db = db
-            st.success("Connected to database!")
-        else:
-            st.error("Failed to connect to the database.")
+st.title("Chat with Claremont Colleges Course Recommender")
 
 for message in st.session_state.chat_history:
     if isinstance(message, AIMessage):
